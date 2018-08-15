@@ -6,12 +6,14 @@ module Processor
 	input  wire [`HardInt] intr,
 	
 	input  wire [`DataBus] iram_rdata,
+	input  wire            iram_wait,
 	output wire            iram_en,
 	output wire [`WriteEn] iram_wen,
 	output wire [`AddrBus] iram_addr,
 	output wire [`DataBus] iram_wdata,
 	
 	input  wire [`DataBus] dram_rdata,
+	input  wire            dram_wait,
 	output wire            dram_en,
 	output wire [`WriteEn] dram_wen,
 	output wire [`AddrBus] dram_addr,
@@ -118,22 +120,16 @@ module Processor
 	wire [`DataBus] cp0_cause;
 	wire [`DataBus] cp0_epc;
 	
-	
 	wire       flush;
 	wire [4:0] stallreq;
 	wire [5:0] stall;
-
-	
-	assign iram_addr  = if_pc;
-	assign iram_wen   = 4'b0000;
-	assign iram_wdata = `ZeroWord;
 	
 	PC pc (
 		.clk     (clk),
 		.rst     (rst),
 		.stall   (stall[`STALL_PC]),
 		.pc      (if_pc),
-		.iram_en (iram_en),
+		.inst_en (iram_en),
 		.bflag   (bflag),
 		.baddr   (baddr),
 		.flush   (flush),
@@ -141,6 +137,9 @@ module Processor
 		.new_pc  (new_pc)
 	);
 	
+	assign iram_addr  = if_pc;
+	assign iram_wen   = 4'b0000;
+	assign iram_wdata = `ZeroWord;
 	assign if_inst = iram_rdata;
 	assign stallreq[`SREQ_IF] = `false;
 	
@@ -363,6 +362,7 @@ module Processor
 		.mtor         (mem_mtor),
 		
 		.dram_rdata   (dram_rdata),
+		.dram_wait    (dram_wait),
 		.dram_addr    (dram_addr),
 		.dram_wen     (dram_wen),
 		.dram_wdata   (dram_wdata),

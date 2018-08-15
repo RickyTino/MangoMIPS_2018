@@ -13,6 +13,7 @@ module MEM
 	
 	//RAM interface
 	input  wire [`DataBus] dram_rdata,
+	input  wire            dram_wait,
 	output reg  [`AddrBus] dram_addr,
 	output reg  [`WriteEn] dram_wen,
 	output reg  [`DataBus] dram_wdata,
@@ -38,7 +39,7 @@ module MEM
 );
 	
 	//Memory accessing
-	assign stallreq = `false;
+	assign stallreq = dram_wait;
 	assign mtor = dram_en && !dram_wen;
 	assign ramdata = dram_rdata;
 	

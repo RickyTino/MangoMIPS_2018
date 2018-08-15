@@ -11,10 +11,10 @@ module PC
 	
 	output reg  [`AddrBus] pc,
 	output reg  [`DataBus] excp,
-	output wire            iram_en
+	output wire            inst_en
 	
 );
-	assign iram_en = !stall;
+	assign inst_en = !stall;
 	
 	always @(posedge clk, posedge rst) begin
 		if (rst) pc <= `ENT_START - 32'h4;
