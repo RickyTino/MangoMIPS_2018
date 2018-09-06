@@ -1,30 +1,35 @@
 `include "defines.v"
 
-module Processor
+module MangoMIPS
 (
 	input  wire            clk, rst,
 	input  wire [`HardInt] intr,
-	
-	input  wire [`DataBus] iram_rdata,
-	input  wire            iram_wait,
+	output wire            flush,
+
 	output wire            iram_en,
-	output wire [`WriteEn] iram_wen,
 	output wire [`AddrBus] iram_addr,
+	input  wire [`DataBus] iram_rdata,
+	output wire [`WriteEn] iram_wen,
 	output wire [`DataBus] iram_wdata,
+	input  wire            iram_sreq,
+	output wire            iram_stall,
 	
-	input  wire [`DataBus] dram_rdata,
-	input  wire            dram_wait,
 	output wire            dram_en,
-	output wire [`WriteEn] dram_wen,
 	output wire [`AddrBus] dram_addr,
+	input  wire [`DataBus] dram_rdata,
+	output wire [`WriteEn] dram_wen,
 	output wire [`DataBus] dram_wdata,
+	input  wire            dram_sreq,
+	output wire            dram_stall,
 	
 	output wire [`AddrBus] debug_wb_pc,
 	output wire [`WriteEn] debug_wb_rf_wen,
 	output wire [`RegAddr] debug_wb_rf_wnum,
 	output wire [`DataBus] debug_wb_rf_wdata
-	
 );
+	
+	wire [`AddrBus] iram_vaddr;
+	wire [`AddrBus] dram_vaddr;
 	
 	wire [`AddrBus] if_pc;
 	wire [`InstBus] if_inst;
@@ -120,16 +125,15 @@ module Processor
 	wire [`DataBus] cp0_cause;
 	wire [`DataBus] cp0_epc;
 	
-	wire       flush;
+	//wire       flush;
 	wire [4:0] stallreq;
-	wire [5:0] stall;
+	wire [4:0] stall;
 	
 	PC pc (
 		.clk     (clk),
 		.rst     (rst),
-		.stall   (stall[`STALL_PC]),
+		.stall   (stall[`STALL_IF]),
 		.pc      (if_pc),
-		.inst_en (iram_en),
 		.bflag   (bflag),
 		.baddr   (baddr),
 		.flush   (flush),
@@ -137,11 +141,13 @@ module Processor
 		.new_pc  (new_pc)
 	);
 	
-	assign iram_addr  = if_pc;
-	assign iram_wen   = 4'b0000;
-	assign iram_wdata = `ZeroWord;
-	assign if_inst = iram_rdata;
-	assign stallreq[`SREQ_IF] = `false;
+	assign iram_en            = !rst;
+	assign iram_vaddr         = if_pc;
+	assign iram_wen           = `WrDisable;
+	assign iram_wdata         = `ZeroWord;
+	assign if_inst            = iram_rdata;
+	assign iram_stall         = stall[`STALL_IF];
+	assign stallreq[`SREQ_IF] = iram_sreq;
 	
 	IF_ID if_id (
 		.clk      (clk),
@@ -310,7 +316,7 @@ module Processor
 		.opr2      (div_opr2),
 		.start     (div_start),
 		.divsigned (div_signed),
-		.abandon   (`false)
+		.abandon   (flush)
 	);
 	
 	EX_MEM ex_mem (
@@ -362,8 +368,8 @@ module Processor
 		.mtor         (mem_mtor),
 		
 		.dram_rdata   (dram_rdata),
-		.dram_wait    (dram_wait),
-		.dram_addr    (dram_addr),
+		.dram_sreq    (dram_sreq),
+		.dram_addr    (dram_vaddr),
 		.dram_wen     (dram_wen),
 		.dram_wdata   (dram_wdata),
 		.dram_en      (dram_en),
@@ -385,6 +391,8 @@ module Processor
 		.stallreq   (stallreq[`SREQ_MEM])
 	);
 	
+	assign dram_stall = stall[`STALL_MEM];
+	
 	MEM_WB mem_wb (
 		.clk           (clk),
 		.rst           (rst),
@@ -396,7 +404,7 @@ module Processor
 		.mem_wraddr    (mem_wraddr),
 		.mem_wrdata    (mem_wrdata),
 		.mem_ramdata   (mem_ramdata),
-		.mem_ramaddr   (dram_addr),
+		.mem_ramaddr   (dram_vaddr),
 		.mem_opr2      (mem_opr2),
 		.mem_mtor      (mem_mtor),
 		.mem_whilo     (mem_whilo),
@@ -476,6 +484,16 @@ module Processor
 		.cp0_epc  (mem_cp0_epc),
 		.flush    (flush),
 		.new_pc   (new_pc)
+	);
+	
+	MMU I_MMU (
+		.vrt_addr (iram_vaddr),
+		.phy_addr (iram_addr )
+	);
+	
+	MMU D_MMU (
+		.vrt_addr (dram_vaddr),
+		.phy_addr (dram_addr )
 	);
 	
 	assign debug_wb_pc       = wb_pc;

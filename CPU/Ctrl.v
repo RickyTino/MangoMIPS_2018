@@ -4,7 +4,7 @@ module Ctrl
 (
 	input  wire            rst,
 	input  wire [4:0]      stallreq, 
-	output reg  [5:0]      stall,
+	output reg  [4:0]      stall,
 	
 	input  wire [`DataBus] exctype,
 	input  wire [`DataBus] cp0_epc,
@@ -15,13 +15,13 @@ module Ctrl
 	
 	always @(*) begin
 		if(rst) begin
-			stall  <= 6'b000000;
+			stall  <= 5'b00000;
 			flush  <= `false;
 			new_pc <= `ZeroWord;
 		end
 		else begin
 			if(exctype != `ZeroWord) begin
-				stall <= 6'b000000;
+				stall <= 5'b00000;
 				case (exctype)
 					`EXCT_INT,
 					`EXCT_SYS,
@@ -49,12 +49,12 @@ module Ctrl
 				flush  <= `false;
 				new_pc <= `ZeroWord;
 				casez (stallreq)
-					5'b00001: stall <= 6'b000111;
-					5'b0001?: stall <= 6'b000111;
-					5'b001??: stall <= 6'b001111;
-					5'b01???: stall <= 6'b011111;
-					5'b1????: stall <= 6'b111111;
-					default:  stall <= 6'b000000;
+					5'b00001: stall <= 5'b00011;
+					5'b0001?: stall <= 5'b00011;
+					5'b001??: stall <= 5'b00111;
+					5'b01???: stall <= 5'b01111;
+					5'b1????: stall <= 5'b11111;
+					default:  stall <= 5'b00000;
 				endcase
 			end
 		end

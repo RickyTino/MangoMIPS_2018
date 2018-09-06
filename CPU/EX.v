@@ -98,7 +98,7 @@ module EX
 			default: begin
 				mulopr1 <= `ZeroWord;
 				mulopr2 <= `ZeroWord;
-				mulRes  <= `ZeroDblWord;
+				mulRes  <= `ZeroDWord;
 		    end
 		endcase
 	end
@@ -108,7 +108,7 @@ module EX
 	
 	always @(*) begin
 		if(rst) begin
-			macRes <= `ZeroDblWord;
+			macRes <= `ZeroDWord;
 		end
 		else begin
 			case (aluop)
@@ -116,7 +116,7 @@ module EX
 				`ALU_MADDU: macRes <= {hi, lo} + mulRes;
 				`ALU_MSUB,
 				`ALU_MSUBU: macRes <= {hi, lo} - mulRes;
-				default:    macRes <= `ZeroDblWord;
+				default:    macRes <= `ZeroDWord;
 			endcase
 		end
 	end
@@ -296,7 +296,7 @@ module EX
 	//input hi/lo
 	always @(*) begin
 		if(rst) begin
-			{hi, lo} <= `ZeroDblWord;
+			{hi, lo} <= `ZeroDWord;
 		end
 		else begin
 			case ({mem_whilo, wb_whilo})

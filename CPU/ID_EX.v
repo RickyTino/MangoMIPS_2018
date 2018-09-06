@@ -15,7 +15,6 @@ module ID_EX
 	input  wire [`AddrBus] id_linkaddr,
 	input  wire            id_inslot,
 	input  wire            id_nextslot,
-//	input  wire [`AddrBus] id_ofsimm,
 	input  wire [`DataBus] id_excp,
 	input  wire [`AddrBus] id_pc,
 	
@@ -28,7 +27,6 @@ module ID_EX
 	output reg  [`AddrBus] ex_linkaddr,
 	output reg             ex_inslot,
 	output reg             o_inslot,
-//	output reg  [`AddrBus] ex_ofsimm,
 	output reg  [`DataBus] ex_excp,
 	output reg  [`AddrBus] ex_pc
 );
@@ -45,7 +43,6 @@ module ID_EX
 			ex_linkaddr <= `ZeroWord;
 			ex_inslot   <= `false;
 			o_inslot    <= `false;
-//			ex_ofsimm   <= `ZeroWord;
 			ex_excp     <= `ZeroWord;
 			ex_pc	    <= `ZeroWord;
 		end
@@ -62,7 +59,6 @@ module ID_EX
 					ex_linkaddr <= id_linkaddr;
 					ex_inslot   <= id_inslot;
 					o_inslot    <= id_nextslot;
-	//				ex_ofsimm   <= id_ofsimm;
 					ex_excp     <= id_excp;
 					ex_pc       <= id_pc;
 				end
@@ -78,7 +74,6 @@ module ID_EX
 					ex_wraddr   <= `ZeroReg;
 					ex_linkaddr <= `ZeroWord;
 					ex_inslot   <= `false;
-	//				ex_ofsimm   <= `ZeroWord;
 					ex_excp     <= `ZeroWord;
 					ex_pc	    <= `ZeroWord;
 				end

@@ -33,7 +33,7 @@ module DIV
 		if(rst) begin
 			state    <= DIVFREE;
 			ready    <= `false;
-			res      <= `ZeroDblWord;
+			res      <= `ZeroDWord;
 			dividend <= 65'b0;
 			divisor  <= `ZeroWord;
 			cnt      <= 6'd0;
@@ -56,12 +56,12 @@ module DIV
 					end
 					else begin
 						ready <= `false;
-						res   <= `ZeroDblWord;
+						res   <= `ZeroDWord;
 					end
 				end
 				
 				DIVBYZ: begin
-					dividend <= `ZeroDblWord;
+					dividend <= `ZeroDWord;
 					state    <= DIVEND;
 				end
 				
@@ -83,6 +83,9 @@ module DIV
 							cnt   <= 6'd0;
 						end
 					end
+					else begin
+						state <= DIVFREE;
+					end
 				end
 				
 				DIVEND: begin
@@ -91,7 +94,7 @@ module DIV
 					if(!start) begin
 						state <= DIVFREE;
 						ready <= `false;
-						res   <= `ZeroDblWord;
+						res   <= `ZeroDWord;
 					end
 				end				
 			endcase

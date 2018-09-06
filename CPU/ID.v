@@ -33,7 +33,6 @@ module ID
 	output reg  [`AddrBus] baddr,
 	output reg  [`AddrBus] linkaddr,
 	
-	//output wire [`AddrBus] ofsimm,
 	input  wire [`DataBus] i_excp,
 	output reg  [`DataBus] o_excp,
 	
@@ -60,8 +59,6 @@ module ID
 	
 	reg [31:0] imm;
 	reg n_valid;
-	
-	//assign ofsimm   = seimm;
 	
 	reg exc_sys, exc_bp, exc_eret;
 	
@@ -531,7 +528,7 @@ module ID
 				
 				`OP_ADDI: begin
 					wreg    <= `true;
-					aluop   <= `ALU_ADD;                    //TODO:ADDI?
+					aluop   <= `ALU_ADD;
 					aluctrl <= `RES_ARITH;
 					r1read  <= `true;
 					r2read  <= `false;
@@ -542,7 +539,7 @@ module ID
 				
 				`OP_ADDIU: begin
 					wreg    <= `true;
-					aluop   <= `ALU_ADDU;                    //TODO:ADDI?
+					aluop   <= `ALU_ADDU;
 					aluctrl <= `RES_ARITH;
 					r1read  <= `true;
 					r2read  <= `false;
@@ -926,12 +923,8 @@ module ID
 	end
 	
 	always @(*) begin
-		if(rst) begin
-			o_inslot <= `false;
-		end
-		else begin
-			o_inslot <= i_inslot;
-		end
+		if(rst) o_inslot <= `false;
+		else    o_inslot <= i_inslot;
 	end
 	
 	always @(*) begin

@@ -11,19 +11,18 @@
 
 /*---------------Zero---------------*/
 `define ZeroWord			32'h0
-`define ZeroDblWord         64'h0
+`define ZeroDWord         64'h0
 `define ZeroReg				 5'h0
 `define WrDisable            4'h0
 `define false				 1'b0
 `define true				 1'b1
 
 /*---------------Stall---------------*/
-`define STALL_PC				0
-`define STALL_IF				1
-`define STALL_ID				2
-`define STALL_EX				3
-`define STALL_MEM				4
-`define STALL_WB				5
+`define STALL_IF				0
+`define STALL_ID				1
+`define STALL_EX				2
+`define STALL_MEM				3
+`define STALL_WB				4
 
 `define SREQ_IF					0
 `define SREQ_ID					1
@@ -263,19 +262,3 @@
 /*---------------ENTRANCE---------------*/
 `define ENT_START			32'hBFC00000
 `define ENT_EXCP			32'hBFC00380
-
-/*优化备忘录：
--运算前置
--减少case层次
--if变case
-
-后期：
-1、穿过某一阶段不引起变化的信号从模块中去除；
-2、某些地方改用LUT(case)
-3、注意信号传递中一些无用信息
-4、精简regfile读等信号
-5、简化ALU的多路选择
-*/
-
-
-

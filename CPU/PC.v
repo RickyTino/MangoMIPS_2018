@@ -10,14 +10,13 @@ module PC
 	input  wire [`AddrBus] baddr,
 	
 	output reg  [`AddrBus] pc,
-	output reg  [`DataBus] excp,
-	output wire            inst_en
-	
+	output reg  [`DataBus] excp
 );
-	assign inst_en = !stall;
 	
 	always @(posedge clk, posedge rst) begin
-		if (rst) pc <= `ENT_START - 32'h4;
+		if (rst) begin
+			pc      <= `ENT_START;
+		end
 		else begin
 			casez ({stall, bflag, flush})
 				3'b000: pc <= pc + 32'h4;
