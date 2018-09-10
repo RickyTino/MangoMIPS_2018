@@ -7,20 +7,22 @@ module MangoMIPS
 	output wire            flush,
 
 	output wire            iram_en,
+	output wire [`WriteEn] iram_wen,
 	output wire [`AddrBus] iram_addr,
 	input  wire [`DataBus] iram_rdata,
-	output wire [`WriteEn] iram_wen,
 	output wire [`DataBus] iram_wdata,
 	input  wire            iram_sreq,
 	output wire            iram_stall,
+	output wire            iram_cached,
 	
 	output wire            dram_en,
+	output wire [`WriteEn] dram_wen,
 	output wire [`AddrBus] dram_addr,
 	input  wire [`DataBus] dram_rdata,
-	output wire [`WriteEn] dram_wen,
 	output wire [`DataBus] dram_wdata,
 	input  wire            dram_sreq,
 	output wire            dram_stall,
+	output wire            dram_cached,
 	
 	output wire [`AddrBus] debug_wb_pc,
 	output wire [`WriteEn] debug_wb_rf_wen,
@@ -487,13 +489,15 @@ module MangoMIPS
 	);
 	
 	MMU I_MMU (
-		.vrt_addr (iram_vaddr),
-		.phy_addr (iram_addr )
+		.vrt_addr (iram_vaddr ),
+		.phy_addr (iram_addr  ),
+		.cached   (iram_cached)
 	);
 	
 	MMU D_MMU (
-		.vrt_addr (dram_vaddr),
-		.phy_addr (dram_addr )
+		.vrt_addr (dram_vaddr ),
+		.phy_addr (dram_addr  ),
+		.cached   (dram_cached)
 	);
 	
 	assign debug_wb_pc       = wb_pc;
