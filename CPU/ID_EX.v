@@ -58,12 +58,26 @@ module ID_EX
 					ex_wraddr   <= id_wraddr;
 					ex_linkaddr <= id_linkaddr;
 					ex_inslot   <= id_inslot;
-					o_inslot    <= id_nextslot;
 					ex_excp     <= id_excp;
 					ex_pc       <= id_pc;
+					
+					o_inslot    <= id_nextslot;
 				end
 				
-				3'b010,
+				3'b010: begin
+					ex_inst     <= `ZeroWord;
+					ex_aluop    <= `ALU_NOP;
+					ex_aluctrl  <= `RES_NOP;
+					ex_opr1     <= `ZeroWord;
+					ex_opr2     <= `ZeroWord;
+					ex_wreg     <= `false;
+					ex_wraddr   <= `ZeroReg;
+					ex_linkaddr <= `ZeroWord;
+					ex_inslot   <= `false;
+					ex_excp     <= `ZeroWord;
+					ex_pc	    <= `ZeroWord;
+				end
+				
 				3'b??1: begin
 					ex_inst     <= `ZeroWord;
 					ex_aluop    <= `ALU_NOP;
@@ -76,6 +90,8 @@ module ID_EX
 					ex_inslot   <= `false;
 					ex_excp     <= `ZeroWord;
 					ex_pc	    <= `ZeroWord;
+					
+					o_inslot    <= `false;
 				end
 			/*
 			 if(!id_stall) begin

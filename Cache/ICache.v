@@ -101,20 +101,22 @@ module ICache (
 	  .dinb  (dinb),	// input wire [31 : 0] dinb
 	  .doutb (doutb)	// output wire [31 : 0] doutb
 	);
-	//Cached
-	reg  [18:0] cache_table [255:0];
 	
+	//Cached
+	reg  [17:0] cache_haddr [255:0];
+	reg         cache_valid [255:0];
+
 	wire [ 3:0] addr_wdsel = iram_addr[ 5: 2];
 	wire [ 7:0] addr_lnsel = iram_addr[13: 6];
 	wire [17:0] addr_haddr = iram_addr[31:14];
-	wire [17:0] line_haddr = cache_table[addr_lnsel][17:0];
-	wire        line_valid = cache_table[addr_lnsel][18];
+	wire [17:0] line_haddr = cache_haddr[addr_lnsel];
+	wire        line_valid = cache_valid[addr_lnsel];
 	wire        cache_hit  = (line_haddr == addr_haddr) && line_valid;
 	
 	wire [ 7:0] ivad_lnsel = iram_ivaddr[13: 6];
 	wire [17:0] ivad_haddr = iram_ivaddr[31:14];
-	wire [17:0] ivln_haddr = cache_table[ivad_lnsel][17:0];
-	wire        ivln_valid = cache_table[ivad_lnsel][18];
+	wire [17:0] ivln_haddr = cache_haddr[ivad_lnsel];
+	wire        ivln_valid = cache_valid[ivad_lnsel];
 	wire        iv_hit     = (ivln_haddr == ivad_haddr) && ivln_valid;
 	
 	
@@ -154,18 +156,29 @@ module ICache (
 	reg [ 1:0] state;
 	reg [31:0] lk_addr;
 	reg [ 3:0] cnt;
+	
+	wire [7:0] lk_lnsel = lk_addr[13:6];
 	integer i;
 	
 	always @(posedge clk, posedge rst) begin
 		if(rst) begin
+			for(i = 0; i < 256; i = i + 1) begin
+				cache_haddr[i] <= 18'b0;
+				cache_valid[i] <=  1'b0;
+			end
 			state        <= `Rd_Idle;
 			axim_arid    <=  4'b0;
 			axim_araddr  <= 32'b0;
 			axim_arlen   <=  4'b0;
 			axim_arvalid <=  1'b0;
-			cnt          <=  4'b0;
-			for(i = 0; i < 256; i = i + 1)
-				cache_table[i] <= 19'b0;
+			
+			enb   <=  1'b0;
+			web   <=  4'h0;
+			addrb <= 12'b0;
+			dinb  <= 32'b0;
+			
+			cnt     <=  4'b0;
+			lk_addr <= 32'b0;     
 		end
 		else begin
 			axim_arid    <=  4'b0;
@@ -184,6 +197,8 @@ module ICache (
 						lk_addr <= {iram_addr[31:6], 6'b0};
 						cnt     <= 4'b0;
 						state   <= `Rd_Addr;
+						cache_haddr[addr_lnsel] <= {iram_addr[31:6], 6'b0};
+						cache_valid[addr_lnsel] <= 1'b0;
 					end
 				end
 				
@@ -203,7 +218,7 @@ module ICache (
 					if(axim_rvalid) begin
 						enb   <= 1'b1;
 						web   <= 4'hF;
-						addrb <= {addr_lnsel, cnt};
+						addrb <= {lk_lnsel, cnt};
 						dinb  <= axim_rdata;
 						cnt   <= cnt + 4'h1;
 						if(axim_rlast) begin
@@ -213,20 +228,30 @@ module ICache (
 				end
 				
 				`Rd_Wait: begin
-					cache_table[addr_lnsel][17:0] <= lk_addr[31:14];
-					cache_table[addr_lnsel][18]   <= 1'b1;
+					cache_haddr[lk_lnsel] <= lk_addr[31:14];
+					cache_valid[lk_lnsel] <= 1'b1;
 					if(iram_stall == rd_sreq) state <= `Rd_Idle;
 				end
 				
 			endcase
 			
 			if(iram_hitiv && iv_hit && (state == `Rd_Idle)) begin
-				cache_table[ivad_lnsel][18] <= 1'b0;
+				cache_valid[ivad_lnsel] <= 1'b0;
 			end
 		end
 	end
 	
-	assign iram_rdata = douta;
+	reg lk_flush;
+	always @(posedge clk, posedge rst) begin
+		if(rst) begin
+			lk_flush <= 1'b0;
+		end
+		else begin
+			if(!iram_stall) lk_flush <= flush;
+		end
+	end
+	
+	assign iram_rdata = lk_flush ? 1'b0 : douta;//iram_stall ? 32'b0 : douta;
 	
 endmodule
 	
