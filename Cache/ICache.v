@@ -197,7 +197,7 @@ module ICache (
 						lk_addr <= {iram_addr[31:6], 6'b0};
 						cnt     <= 4'b0;
 						state   <= `Rd_Addr;
-						cache_haddr[addr_lnsel] <= {iram_addr[31:6], 6'b0};
+						cache_haddr[addr_lnsel] <= iram_addr[31:14];
 						cache_valid[addr_lnsel] <= 1'b0;
 					end
 				end
@@ -228,7 +228,7 @@ module ICache (
 				end
 				
 				`Rd_Wait: begin
-					cache_haddr[lk_lnsel] <= lk_addr[31:14];
+					//cache_haddr[lk_lnsel] <= lk_addr[31:14];
 					cache_valid[lk_lnsel] <= 1'b1;
 					if(iram_stall == rd_sreq) state <= `Rd_Idle;
 				end

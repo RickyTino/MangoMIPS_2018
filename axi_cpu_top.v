@@ -62,6 +62,7 @@ module mycpu_top
 	wire [31:0] dram_rdata;
 	wire        dram_sreq;
 	wire        dram_stall;
+	wire        dram_cached;
 	
 	MangoMIPS CPU (
 		.clk         (aclk      ),
@@ -82,6 +83,7 @@ module mycpu_top
 		.dram_rdata  (dram_rdata),
 		.dram_sreq   (dram_sreq ),
 		.dram_stall  (dram_stall),
+		.dram_cached (dram_cached),
 		
 		.debug_wb_pc      (debug_wb_pc      ),
 		.debug_wb_rf_wen  (debug_wb_rf_wen  ),
@@ -296,9 +298,60 @@ module mycpu_top
 		.m_axi_bready     ( bready      )
 	);
 	
+	DInterface Data_Intf (
+		.clk            (aclk           ),
+		.rst            (!aresetn       ),
+		.flush          (flush          ),
+		.axim_arid      (dbus_arid      ),
+		.axim_araddr    (dbus_araddr    ),
+		.axim_arlen     (dbus_arlen     ),
+		.axim_arsize    (dbus_arsize    ),
+		.axim_arburst   (dbus_arburst   ),
+		.axim_arlock    (dbus_arlock    ),
+		.axim_arcache   (dbus_arcache   ),
+		.axim_arprot    (dbus_arprot    ),
+		.axim_arvalid   (dbus_arvalid   ),
+		.axim_arready   (dbus_arready   ),		
+		.axim_rid       (dbus_rid       ),
+		.axim_rdata     (dbus_rdata     ),
+		.axim_rresp     (dbus_rresp     ),
+		.axim_rlast     (dbus_rlast     ),
+		.axim_rvalid    (dbus_rvalid    ),
+		.axim_rready    (dbus_rready    ),
+		.axim_awid      (dbus_awid      ),
+		.axim_awaddr    (dbus_awaddr    ),
+		.axim_awlen     (dbus_awlen     ),
+		.axim_awsize    (dbus_awsize    ),
+		.axim_awburst   (dbus_awburst   ),
+		.axim_awlock    (dbus_awlock    ),
+		.axim_awcache   (dbus_awcache   ),
+		.axim_awprot    (dbus_awprot    ),
+		.axim_awvalid   (dbus_awvalid   ),
+		.axim_awready   (dbus_awready   ),
+		.axim_wid       (dbus_wid       ),
+		.axim_wdata     (dbus_wdata     ),
+		.axim_wstrb     (dbus_wstrb     ),
+		.axim_wlast     (dbus_wlast     ),
+		.axim_wvalid    (dbus_wvalid    ),
+		.axim_wready    (dbus_wready    ),
+		.axim_bid       (dbus_bid       ),
+		.axim_bresp     (dbus_bresp     ),
+		.axim_bvalid    (dbus_bvalid    ),
+		.axim_bready    (dbus_bready    ),
+		
+		.dram_en		(dram_en        ),
+		.dram_wen		(dram_wen       ),
+		.dram_addr		(dram_addr      ),
+		.dram_wdata		(dram_wdata     ),
+		.dram_rdata		(dram_rdata     ),
+		.dram_sreq      (dram_sreq      ),
+		.dram_stall     (dram_stall     ),
+		.dram_hitiv     (1'b0           ),
+		.dram_hitwb     (1'b0           )
+	);
 	
 	//------------------test---------------------
-	
+	/*
 	wire        axir_ireq;
 	wire [31:0] axir_iaddr;
 	wire [ 3:0] axir_ilen;
@@ -318,7 +371,7 @@ module mycpu_top
 	SRAM_Interface sram_intf (
 		.clk         (aclk      ),
 		.rst         (!aresetn || flush),
-		.flush       (1'b0),
+		.flush       (1'b0      ),
 		
 //		.iram_en     (iram_en   ),
 //		.iram_wen    (iram_wen  ),
@@ -424,7 +477,6 @@ module mycpu_top
 		.axiw_rdy  (axiw_rdy  ),
 		.flush     (1'b0) 
 	);
-/*
 	
 	AXI_master axim (
 		.aclk      (aclk      ),
