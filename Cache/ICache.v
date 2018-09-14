@@ -1,7 +1,7 @@
-`define Rd_Idle 0
-`define Rd_Addr 1
-`define Rd_Data 2
-`define Rd_Wait 3
+`define State_Idle 0
+`define State_Addr 1
+`define State_Data 2
+`define State_Wait 3
 
 module ICache (
 	input  wire        clk,
@@ -166,7 +166,7 @@ module ICache (
 				cache_haddr[i] <= 18'b0;
 				cache_valid[i] <=  1'b0;
 			end
-			state        <= `Rd_Idle;
+			state        <= `State_Idle;
 			axim_arid    <=  4'b0;
 			axim_araddr  <= 32'b0;
 			axim_arlen   <=  4'b0;
@@ -192,19 +192,22 @@ module ICache (
 			dinb  <= 32'b0;
 			
 			case(state)
-				`Rd_Idle: begin
+				`State_Idle: begin
 					if(!cache_hit && !iram_hitiv) begin
 						lk_addr <= {iram_addr[31:6], 6'b0};
 						cnt     <= 4'b0;
-						state   <= `Rd_Addr;
-						cache_haddr[addr_lnsel] <= iram_addr[31:14];
+						state   <= `State_Addr;
+						cache_haddr[addr_lnsel] <= addr_haddr;
 						cache_valid[addr_lnsel] <= 1'b0;
+					end
+					else if(iram_hitiv && iv_hit) begin
+						cache_valid[ivad_lnsel] <= 1'b0;
 					end
 				end
 				
-				`Rd_Addr: begin
+				`State_Addr: begin
 					if(axim_arvalid && axim_arready) begin
-						state <= `Rd_Data;
+						state <= `State_Data;
 					end
 					else begin
 						axim_arid    <= 4'b0001;
@@ -214,7 +217,7 @@ module ICache (
 					end
 				end
 				
-				`Rd_Data: begin
+				`State_Data: begin
 					if(axim_rvalid) begin
 						enb   <= 1'b1;
 						web   <= 4'hF;
@@ -222,33 +225,26 @@ module ICache (
 						dinb  <= axim_rdata;
 						cnt   <= cnt + 4'h1;
 						if(axim_rlast) begin
-							state <= `Rd_Wait;
+							state <= `State_Wait;
 						end
 					end
 				end
 				
-				`Rd_Wait: begin
-					//cache_haddr[lk_lnsel] <= lk_addr[31:14];
+				`State_Wait: begin
+					cache_haddr[lk_lnsel] <= lk_addr[31:14];
 					cache_valid[lk_lnsel] <= 1'b1;
-					if(iram_stall == rd_sreq) state <= `Rd_Idle;
+					if(iram_stall == rd_sreq) state <= `State_Idle;
 				end
 				
 			endcase
-			
-			if(iram_hitiv && iv_hit && (state == `Rd_Idle)) begin
-				cache_valid[ivad_lnsel] <= 1'b0;
-			end
 		end
 	end
 	
 	reg lk_flush;
 	always @(posedge clk, posedge rst) begin
-		if(rst) begin
-			lk_flush <= 1'b0;
-		end
-		else begin
+		if(rst) lk_flush <= 1'b0;
+		else
 			if(!iram_stall) lk_flush <= flush;
-		end
 	end
 	
 	assign iram_rdata = lk_flush ? 1'b0 : douta;//iram_stall ? 32'b0 : douta;

@@ -215,6 +215,60 @@ module mycpu_top
 		.iram_ivaddr    (32'b0          )
 	);
 	
+//	DInterface Data_Intf (
+	DCache Data_Cache (
+		.clk            (aclk           ),
+		.rst            (!aresetn       ),
+		.flush          (flush          ),
+		.axim_arid      (dbus_arid      ),
+		.axim_araddr    (dbus_araddr    ),
+		.axim_arlen     (dbus_arlen     ),
+		.axim_arsize    (dbus_arsize    ),
+		.axim_arburst   (dbus_arburst   ),
+		.axim_arlock    (dbus_arlock    ),
+		.axim_arcache   (dbus_arcache   ),
+		.axim_arprot    (dbus_arprot    ),
+		.axim_arvalid   (dbus_arvalid   ),
+		.axim_arready   (dbus_arready   ),		
+		.axim_rid       (dbus_rid       ),
+		.axim_rdata     (dbus_rdata     ),
+		.axim_rresp     (dbus_rresp     ),
+		.axim_rlast     (dbus_rlast     ),
+		.axim_rvalid    (dbus_rvalid    ),
+		.axim_rready    (dbus_rready    ),
+		.axim_awid      (dbus_awid      ),
+		.axim_awaddr    (dbus_awaddr    ),
+		.axim_awlen     (dbus_awlen     ),
+		.axim_awsize    (dbus_awsize    ),
+		.axim_awburst   (dbus_awburst   ),
+		.axim_awlock    (dbus_awlock    ),
+		.axim_awcache   (dbus_awcache   ),
+		.axim_awprot    (dbus_awprot    ),
+		.axim_awvalid   (dbus_awvalid   ),
+		.axim_awready   (dbus_awready   ),
+		.axim_wid       (dbus_wid       ),
+		.axim_wdata     (dbus_wdata     ),
+		.axim_wstrb     (dbus_wstrb     ),
+		.axim_wlast     (dbus_wlast     ),
+		.axim_wvalid    (dbus_wvalid    ),
+		.axim_wready    (dbus_wready    ),
+		.axim_bid       (dbus_bid       ),
+		.axim_bresp     (dbus_bresp     ),
+		.axim_bvalid    (dbus_bvalid    ),
+		.axim_bready    (dbus_bready    ),
+		
+		.dram_en		(dram_en        ),
+		.dram_wen		(dram_wen       ),
+		.dram_addr		(dram_addr      ),
+		.dram_wdata		(dram_wdata     ),
+		.dram_rdata		(dram_rdata     ),
+		.dram_sreq      (dram_sreq      ),
+		.dram_stall     (dram_stall     ),
+		.dram_cached    (dram_cached    ),
+		.dram_hitiv     (1'b0           ),
+		.dram_hitwb     (1'b0           )
+	);
+	
 	axi_crossbar_cpu cpu_axi_1x2 (
 		.aclk             ( aclk        ),                 
 		.aresetn          ( aresetn     ),
@@ -297,244 +351,5 @@ module mycpu_top
 		.m_axi_bvalid     ( bvalid      ),
 		.m_axi_bready     ( bready      )
 	);
-	
-	DInterface Data_Intf (
-		.clk            (aclk           ),
-		.rst            (!aresetn       ),
-		.flush          (flush          ),
-		.axim_arid      (dbus_arid      ),
-		.axim_araddr    (dbus_araddr    ),
-		.axim_arlen     (dbus_arlen     ),
-		.axim_arsize    (dbus_arsize    ),
-		.axim_arburst   (dbus_arburst   ),
-		.axim_arlock    (dbus_arlock    ),
-		.axim_arcache   (dbus_arcache   ),
-		.axim_arprot    (dbus_arprot    ),
-		.axim_arvalid   (dbus_arvalid   ),
-		.axim_arready   (dbus_arready   ),		
-		.axim_rid       (dbus_rid       ),
-		.axim_rdata     (dbus_rdata     ),
-		.axim_rresp     (dbus_rresp     ),
-		.axim_rlast     (dbus_rlast     ),
-		.axim_rvalid    (dbus_rvalid    ),
-		.axim_rready    (dbus_rready    ),
-		.axim_awid      (dbus_awid      ),
-		.axim_awaddr    (dbus_awaddr    ),
-		.axim_awlen     (dbus_awlen     ),
-		.axim_awsize    (dbus_awsize    ),
-		.axim_awburst   (dbus_awburst   ),
-		.axim_awlock    (dbus_awlock    ),
-		.axim_awcache   (dbus_awcache   ),
-		.axim_awprot    (dbus_awprot    ),
-		.axim_awvalid   (dbus_awvalid   ),
-		.axim_awready   (dbus_awready   ),
-		.axim_wid       (dbus_wid       ),
-		.axim_wdata     (dbus_wdata     ),
-		.axim_wstrb     (dbus_wstrb     ),
-		.axim_wlast     (dbus_wlast     ),
-		.axim_wvalid    (dbus_wvalid    ),
-		.axim_wready    (dbus_wready    ),
-		.axim_bid       (dbus_bid       ),
-		.axim_bresp     (dbus_bresp     ),
-		.axim_bvalid    (dbus_bvalid    ),
-		.axim_bready    (dbus_bready    ),
-		
-		.dram_en		(dram_en        ),
-		.dram_wen		(dram_wen       ),
-		.dram_addr		(dram_addr      ),
-		.dram_wdata		(dram_wdata     ),
-		.dram_rdata		(dram_rdata     ),
-		.dram_sreq      (dram_sreq      ),
-		.dram_stall     (dram_stall     ),
-		.dram_hitiv     (1'b0           ),
-		.dram_hitwb     (1'b0           )
-	);
-	
-	//------------------test---------------------
-	/*
-	wire        axir_ireq;
-	wire [31:0] axir_iaddr;
-	wire [ 3:0] axir_ilen;
-	wire        axir_dreq;
-	wire [31:0] axir_daddr;
-	wire        axir_rid;
-	wire        axir_rdy;
-	wire [31:0] axir_data;
-	wire        axir_last;
-	
-	wire        axiw_req;
-	wire [31:0] axiw_addr;
-	wire [31:0] axiw_data;
-	wire [31:0] axiw_sel;
-	wire        axiw_rdy;
-	
-	SRAM_Interface sram_intf (
-		.clk         (aclk      ),
-		.rst         (!aresetn || flush),
-		.flush       (1'b0      ),
-		
-//		.iram_en     (iram_en   ),
-//		.iram_wen    (iram_wen  ),
-//		.iram_addr   (iram_maddr),
-//		.iram_wdata  (iram_wdata),
-//		.iram_rdata  (iram_rdata),
-//		.iram_sreq   (iram_sreq ),
-//		.iram_stall  (iram_stall),
-		.iram_en     (1'b0      ),
-		.iram_wen    (4'b0      ),
-		.iram_addr   (32'b0     ),
-		.iram_wdata  (32'b0     ),
-		.iram_rdata  (          ),
-		.iram_wait   (          ),
-		.iram_stall  (1'b0      ),
-		
-		.dram_en     (dram_en   ),
-		.dram_wen    (dram_wen  ),
-		.dram_addr   (dram_addr ),
-		.dram_wdata  (dram_wdata),
-		.dram_rdata  (dram_rdata),
-		.dram_wait   (dram_sreq ),
-		.dram_stall  (dram_stall),
-		
-		
-		.axir_ireq  (axir_ireq ),
-		.axir_iaddr (axir_iaddr),
-		.axir_ilen  (axir_ilen ),
-		.axir_dreq  (axir_dreq ),
-		.axir_daddr (axir_daddr),
-		.axir_rid   (axir_rid  ),
-		.axir_rdy   (axir_rdy  ),
-		.axir_last  (axir_last ),
-		.axir_data  (axir_data ),
-	
-		.axiw_req  (axiw_req  ),
-		.axiw_addr (axiw_addr ),
-		.axiw_data (axiw_data ),
-		.axiw_sel  (axiw_sel  ),
-		.axiw_rdy  (axiw_rdy  )
-	);
-	
-	AXI_Interface axi_intf (
-		.aclk      (aclk      ),
-		.aresetn   (aresetn && !flush),
 
-		.arid      (dbus_arid      ),
-		.araddr    (dbus_araddr    ),
-		.arlen     (dbus_arlen     ),
-		.arsize    (dbus_arsize    ),
-		.arburst   (dbus_arburst   ),
-		.arlock    (dbus_arlock    ),
-		.arcache   (dbus_arcache   ),
-		.arprot    (dbus_arprot    ),
-		.arvalid   (dbus_arvalid   ),
-		.arready   (dbus_arready   ),
-					
-		.rid       (dbus_rid       ),
-		.rdata     (dbus_rdata     ),
-		.rresp     (dbus_rresp     ),
-		.rlast     (dbus_rlast     ),
-		.rvalid    (dbus_rvalid    ),
-		.rready    (dbus_rready    ),
-				   
-		.awid      (dbus_awid      ),
-		.awaddr    (dbus_awaddr    ),
-		.awlen     (dbus_awlen     ),
-		.awsize    (dbus_awsize    ),
-		.awburst   (dbus_awburst   ),
-		.awlock    (dbus_awlock    ),
-		.awcache   (dbus_awcache   ),
-		.awprot    (dbus_awprot    ),
-		.awvalid   (dbus_awvalid   ),
-		.awready   (dbus_awready   ),
-		
-		.wid       (dbus_wid       ),
-		.wdata     (dbus_wdata     ),
-		.wstrb     (dbus_wstrb     ),
-		.wlast     (dbus_wlast     ),
-		.wvalid    (dbus_wvalid    ),
-		.wready    (dbus_wready    ),
-		
-		.bid       (dbus_bid       ),
-		.bresp     (dbus_bresp     ),
-		.bvalid    (dbus_bvalid    ),
-		.bready    (dbus_bready    ),
-		
-		.axir_ireq  (axir_ireq ),
-		.axir_iaddr (axir_iaddr),
-		.axir_ilen  (axir_ilen ),
-		.axir_dreq  (axir_dreq ),
-		.axir_daddr (axir_daddr),
-		.axir_rid   (axir_rid  ),
-		.axir_rdy   (axir_rdy  ),
-		.axir_last  (axir_last ),
-		.axir_data  (axir_data ),
-	
-	
-		.axiw_req  (axiw_req  ),
-		.axiw_addr (axiw_addr ),
-		.axiw_data (axiw_data ),
-		.axiw_sel  (axiw_sel  ),
-		.axiw_rdy  (axiw_rdy  ),
-		.flush     (1'b0) 
-	);
-	
-	AXI_master axim (
-		.aclk      (aclk      ),
-		.aresetn   (aresetn   ),
-		.arid      (arid      ),
-		.araddr    (araddr    ),
-		.arlen     (arlen     ),
-		.arsize    (arsize    ),
-		.arburst   (arburst   ),
-		.arlock    (arlock    ),
-		.arcache   (arcache   ),
-		.arprot    (arprot    ),
-		.arvalid   (arvalid   ),
-		.arready   (arready   ),		
-		.rid       (rid       ),
-		.rdata     (rdata     ),
-		.rresp     (rresp     ),
-		.rlast     (rlast     ),
-		.rvalid    (rvalid    ),
-		.rready    (rready    ),	   
-		.awid      (awid      ),
-		.awaddr    (awaddr    ),
-		.awlen     (awlen     ),
-		.awsize    (awsize    ),
-		.awburst   (awburst   ),
-		.awlock    (awlock    ),
-		.awcache   (awcache   ),
-		.awprot    (awprot    ),
-		.awvalid   (awvalid   ),
-		.awready   (awready   ),
-		.wid       (wid       ),
-		.wdata     (wdata     ),
-		.wstrb     (wstrb     ),
-		.wlast     (wlast     ),
-		.wvalid    (wvalid    ),
-		.wready    (wready    ),
-		.bid       (bid       ),
-		.bresp     (bresp     ),
-		.bvalid    (bvalid    ),
-		.bready    (bready    ),
-		
-		.iram_en     (iram_en   ),
-		.iram_wen    (iram_wen  ),
-		.iram_addr   (iram_maddr),
-		.iram_wdata  (iram_wdata),
-		.iram_rdata  (iram_rdata),
-		.iram_sreq   (iram_sreq ),
-		.iram_stall  (iram_stall),
-		.dram_en     (dram_en   ),
-		.dram_wen    (dram_wen  ),
-		.dram_addr   (dram_maddr),
-		.dram_wdata  (dram_wdata),
-		.dram_rdata  (dram_rdata),
-		.dram_sreq   (dram_sreq ),
-		.dram_stall  (dram_stall),
-		
-		.flush       (flush)
-	);
-	
-*/
 endmodule

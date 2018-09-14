@@ -46,9 +46,11 @@ module DCache (
 	output wire        axim_bready,
 	//SRAM signals
 	input  wire        dram_en,
+	input  wire [ 3:0] dram_wen,
 	input  wire [31:0] dram_addr,
-	output reg  [31:0] dram_rdata,
-	output reg         dram_sreq,
+	input  wire [31:0] dram_wdata,
+	output wire [31:0] dram_rdata,
+	output wire        dram_sreq,
 	input  wire        dram_stall,
 	input  wire        dram_cached,
 	input  wire        dram_hitiv,
@@ -109,8 +111,10 @@ module DCache (
 	wire [17:0] line_haddr = cache_haddr[addr_lnsel];
 	wire        line_valid = cache_valid[addr_lnsel];
 	wire        line_dirty = cache_dirty[addr_lnsel];
-	wire        cache_hit  = (line_haddr == addr_haddr) && line_valid;
-	wire        cache_wb   = !cache_hit && line_valid && line_dirty;
+	wire        line_adhit = line_haddr == addr_haddr;
+	wire        line_hit   = line_adhit && line_valid;
+	wire        line_wb    = !line_hit  && line_valid && line_dirty;
+	
 	
 	//Uncached
 	reg  [31:0] uncached_data;
@@ -141,20 +145,18 @@ module DCache (
 			
 			if(dram_en) begin
 				if(dram_cached) begin
-					if(!cache_hit) begin
-						if(line_dirty) begin
-							wr_sreq <= cache_wb;
-							rd_sreq <= !cache_hit;
-						end
-						else begin
-							rd_sreq <= !cache_hit;
-						end
+					if(line_hit) begin
+						ena     <= !dram_stall;
+						wea     <= dram_wen;
+						addra   <= dram_addr[13:2];
+						dina    <= dram_wdata;
+					end
+					else if(line_wb) begin
+						wr_sreq <= 1'b1;
+						rd_sreq <= !flush;
 					end
 					else begin
-						ena       <= !dram_stall;
-						wea       <= dram_wen;
-						addra     <= dram_addr[13:2];
-						dina      <= dram_wdata;
+						rd_sreq <= !flush;
 					end
 				end
 				else begin
@@ -179,6 +181,14 @@ module DCache (
 	
 	wire [7:0] rlk_lnsel = rlk_addr[13:6];
 	wire [7:0] wlk_lnsel = wlk_addr[13:6];
+	
+	//test
+	reg  [31:0] wbuf [15:0];
+	reg         fill_wbuf;
+	reg         wbuf_state;
+	reg  [ 4:0] wbuf_cnt;
+	reg  [ 3:0] wbuf_ofs;
+	
 	integer i;
 	
 	always @(posedge clk, posedge rst) begin
@@ -186,6 +196,7 @@ module DCache (
 			for(i = 0; i < 256; i = i + 1) begin
 				cache_haddr[i] <= 18'b0;
 				cache_valid[i] <=  1'b0;
+				cache_dirty[i] <=  1'b0;
 			end
 			rstate       <= `State_Idle;
 			wstate       <= `State_Idle;
@@ -209,7 +220,7 @@ module DCache (
 			dinb  <= 32'b0;
 			
 			uncached_data  <= 32'b0;
-			uncachde_addr  <= 32'b0;
+			uncached_addr  <= 32'b0;
 			uncached_valid <=  1'b0;
 			uncached_wrdy  <=  1'b0;
 			
@@ -221,6 +232,14 @@ module DCache (
 			wlk_strb   <=  4'b0;
 			rlk_cached <=  1'b0;
 			wlk_cached <=  1'b0;
+			
+			//test
+			fill_wbuf  <= 1'b0;
+			wbuf_state <= 1'b0;
+			wbuf_cnt   <= 5'h0;
+			wbuf_ofs   <= 4'h0;
+			for(i = 0; i < 16; i = i + 1)
+				wbuf[i] <= 32'b0;
 			
 		end
 		else begin
@@ -246,22 +265,29 @@ module DCache (
 			uncached_valid <=  1'b0;
 			uncached_wrdy  <=  1'b0;
 			
+			
+			//test
+			fill_wbuf  <= 1'b0;
+			
+			
 			case(rstate)
 				`State_Idle: begin
-					if(dram_rreq) begin
-						rlk_cached <= dram_cached;
-						if(dram_cached) begin
-							if(!cache_hit && !cache_wb) begin
-								rlk_addr <= {dram_addr[31:6], 6'b0};
-								rcnt     <= 4'b0;
-								rstate   <= `State_Addr;
-								cache_haddr[addr_lnsel] <= dram_addr[31:14];
-								cache_valid[addr_lnsel] <= 1'b0;
-							end
+					if(dram_cached) begin
+						if(dram_en && !line_hit && !line_wb) begin
+							rlk_cached <= dram_cached;
+							rlk_addr   <= {dram_addr[31:6], 6'b0};
+							rcnt       <= 4'b0;
+							rstate     <= `State_Addr;
+							cache_haddr[addr_lnsel] <= dram_addr[31:14];
+							cache_valid[addr_lnsel] <= 1'b0;
+							cache_dirty[addr_lnsel] <= 1'b0;
 						end
-						else begin
-							rlk_addr <= dram_addr;
-							rstate   <= `State_Addr;
+					end
+					else begin
+						if(dram_rreq && !uncached_hit) begin
+							rlk_cached <= dram_cached;
+							rlk_addr   <= dram_addr;
+							rstate     <= `State_Addr;
 						end
 					end
 				end
@@ -272,16 +298,16 @@ module DCache (
 					end
 					else begin
 						if(rlk_cached) begin
-							axim_arid    <= 4'b0001;
-							axim_araddr  <= rlk_addr;
-							axim_arlen   <= 4'hF;
+							axim_arid   <= 4'b0001;
+							axim_araddr <= rlk_addr;
+							axim_arlen  <= 4'hF;
 						end
 						else begin
-							axim_arid    <= 4'b0010;
-							axim_araddr  <= rlk_addr;
-							axim_arlen   <= 4'h0;
+							axim_arid   <= 4'b0010;
+							axim_araddr <= rlk_addr;
+							axim_arlen  <= 4'h0;
 						end
-						axim_arvalid <= 1'b1;
+						axim_arvalid    <= 1'b1;
 					end
 				end
 				
@@ -290,7 +316,7 @@ module DCache (
 						if(rlk_cached) begin
 							enb   <= 1'b1;
 							web   <= 4'hF;
-							addrb <= {rlk_lnsel, cnt};
+							addrb <= {rlk_lnsel, rcnt};
 							dinb  <= axim_rdata;
 							rcnt  <= rcnt + 4'h1;
 						end
@@ -312,35 +338,44 @@ module DCache (
 					else begin
 						uncached_valid <= 1'b1;
 					end
-					if(iram_stall == rd_sreq) rstate <= `State_Idle;
+					if(dram_stall == rd_sreq) rstate <= `State_Idle;
 				end
 				
 			endcase
 			
 			case(wstate)
 				`State_Idle: begin
-					if(dram_cached) begin
-						if(cache_wb) begin
-							wlk_addr   <= {iram_addr[31:6], 6'b0};
-							wcnt       <= 4'b0;
-							wlk_cached <= dram_cached;
-							wstate     <= `State_Addr;
+					if(!flush) begin
+						if(dram_cached) begin
+							if(dram_wreq && line_hit) begin
+								cache_dirty[addr_lnsel] <= 1'b1;
+							end
+							if(dram_en && line_wb) begin
+								wlk_addr   <= {line_haddr, addr_lnsel, 6'b0};
+								wcnt       <= 4'b0;
+								wlk_cached <= dram_cached;
+								wstate     <= `State_Addr;
+								
+								//test
+								fill_wbuf  <= 1'b1;
+								
+							end
 						end
-					end
-					else begin
-						if(dram_wreq && !uncached_wrdy) begin
-							wlk_addr   <= dram_addr;
-							wlk_data   <= dram_wdata;
-							wlk_strb   <= dram_wen;
-							wlk_cached <= dram_cached;
-							wstate     <= `State_Addr;
+						else begin
+							if(dram_wreq && !uncached_wrdy) begin
+								wlk_addr   <= dram_addr;
+								wlk_data   <= dram_wdata;
+								wlk_strb   <= dram_wen;
+								wlk_cached <= dram_cached;
+								wstate     <= `State_Addr;
+							end
 						end
 					end
 				end
 				
 				`State_Addr: begin
 					if(axim_awvalid && axim_awready) begin
-						state <= `State_Data;
+						wstate <= `State_Data;
 						if(wlk_cached) begin
 							enb   <= 1'b1;
 							addrb <= {wlk_lnsel, wcnt};
@@ -361,16 +396,16 @@ module DCache (
 				end
 				
 				`State_Data: begin
-					
+					/*
 					if(axim_wvalid && axim_wready) begin
 						if(wlk_cached) begin
 							if(wcnt == 4'hF) begin
-								state <= `State_Wait;
+								wstate <= `State_Wait;
 							end
 							else begin
 								wcnt  <= wcnt + 4'h1;
-								enb   <= 1'b1;
-								addrb <= {wlk_lnsel, wcnt};
+								//enb   <= 1'b1;
+								//addrb <= {wlk_lnsel, wcnt};
 							end
 						end
 						else wstate <= `State_Wait;
@@ -378,6 +413,36 @@ module DCache (
 					else begin
 						if(wlk_cached) begin
 							axim_wdata  <= doutb;
+							axim_wstrb  <= 4'hF;
+							axim_wvalid <= 1'b1;
+							if(wcnt == 4'hF) axim_wlast <= 1'b1;
+						end
+						else begin
+							axim_wdata  <= wlk_data;
+							axim_wstrb  <= wlk_strb;
+							axim_wvalid <= 1'b1;
+							axim_wlast  <= 1'b1;
+						end
+					end
+					*/
+					if(axim_wvalid && axim_wready) begin
+						if(wlk_cached) begin
+							if(wcnt == 4'hF) begin
+								wstate <= `State_Wait;
+							end
+							else begin
+								wcnt        <= wcnt + 4'h1;
+								axim_wdata  <= wbuf[wcnt + 1];
+								axim_wstrb  <= 4'hF;
+								axim_wvalid <= 1'b1;
+								if(wcnt == 4'hE) axim_wlast <= 1'b1;
+							end
+						end
+						else wstate <= `State_Wait;
+					end
+					else begin
+						if(wlk_cached) begin
+							axim_wdata  <= wbuf[wcnt];
 							axim_wstrb  <= 4'hF;
 							axim_wvalid <= 1'b1;
 							if(wcnt == 4'hF) axim_wlast <= 1'b1;
@@ -404,8 +469,36 @@ module DCache (
 				end
 				
 			endcase
+			
+			
+			//test
+			case(wbuf_state)
+				1'b0: begin
+					if(fill_wbuf) begin
+						wbuf_state <= 1;
+						wbuf_cnt   <= 5'h0;
+						enb        <= 1'b1;
+						addrb      <= {wlk_lnsel, 4'b0};
+					end
+				end
+				
+				1'b1: begin
+					if(wbuf_cnt != 5'b10000) begin
+						enb            <= 1'b1;
+						addrb          <= {wlk_lnsel, wbuf_cnt[3:0] + 4'h1};
+						wbuf_cnt       <= wbuf_cnt + 5'h1;
+						wbuf_ofs       <= wbuf_cnt[3:0];
+					end
+					else begin
+						wbuf_state <= 1'b0;
+					end
+					if(wbuf_cnt != 0) wbuf[wbuf_ofs] <= doutb;
+				end
+			endcase
+			
 		end
 	end
+	
 	
 	reg [31:0] temp_rdata;
 	reg lk_flush;
@@ -414,7 +507,7 @@ module DCache (
 	always @(posedge clk, posedge rst) begin
 		if(rst) begin
 			temp_rdata <= 32'b0;
-			lk_flush <= 1'b0;
+			lk_flush   <= 1'b0;
 			res_cached <= 1'b0;
 		end
 		else begin
