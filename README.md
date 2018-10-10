@@ -1,8 +1,8 @@
 # MangoMIPS  
-使用verilog HDL语言编写的轻量级CPU软核，为参加NSCSCC 2018所编写。代码的结构参考了雷思磊的OpenMIPS，并有一些细微改动。
+使用verilog HDL语言编写的轻量级CPU软核，为参加NSCSCC-2018所编写。代码的结构参考了雷思磊的OpenMIPS，并按照自己的理解进行了一些优化，以及按照大赛提供的环境对读写时序的要求进行了微调。
 
 ## 指令集
-遵循NSCSCC大赛指定的指令集架构（57）条，以及少量MIPS32r1中的指令，总共67条，列举如下：
+遵循NSCSCC-2018指定的指令集架构（57条），并额外实现了少量MIPS32r1中的指令，总共67条，列举如下：
 
 #### 算术与逻辑指令： 
 - ADDI, ADDIU, SLTI, SLTIU, ANDI, ORI, XORI, LUI;
